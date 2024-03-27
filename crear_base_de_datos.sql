@@ -44,6 +44,7 @@ END;
 //
 DELIMITER ;
 
+
 DELIMITER //
 CREATE TRIGGER before_vaca_update
 BEFORE UPDATE ON Vaca
@@ -69,7 +70,6 @@ VALUES
 (1008, 2, '2010-08-01', 'Madre ejemplar. Ha tenido varios partos sin complicaciones.',null,null),
 (1009, 2, '2010-09-01', 'Requiere dieta especial debido a sensibilidades alimenticias.',1008,2),
 (1010, 2, '2010-10-01', 'Excelente temperamento. Fácil de manejar durante el ordeño y los chequeos veterinarios.',1008,2);
-
 
 CREATE TABLE IF NOT EXISTS Enfermedades (
     id_enfermedad_vaca INT AUTO_INCREMENT PRIMARY KEY,

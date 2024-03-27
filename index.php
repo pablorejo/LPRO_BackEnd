@@ -41,7 +41,7 @@ switch ($requestMethod) {
             break;
 
         }elseif($uri[1] =='vacas'){
-        if(isset($uri[2])&&isset($uri[3])){
+            if(isset($uri[2])&&isset($uri[3])){
                 switch ($uri[3]) {
                     case 'enfermedades':
                         $id_vaca = (int)$uri[2];
@@ -253,11 +253,6 @@ switch ($requestMethod) {
 
             }else{
                 //todas las vacas
-                                                
-
-                
-                
-                // Las contraseñas coinciden
                 $sentencia = $conexion->prepare("SELECT * FROM Vaca WHERE IdUsuario = ?");
                 $sentencia->bind_param('i', $IdUsuario);
 
@@ -283,7 +278,6 @@ switch ($requestMethod) {
         break;
 
     case 'PUT':
-
         if($uri[1] =='parcelas'){
             // Obtener los datos de la parcela
             $id_parcela = $data->id_parcela;
@@ -296,8 +290,6 @@ switch ($requestMethod) {
             $sentenciaParcela = $conexion->prepare("UPDATE parcela SET nombre_parcela = ?, IdUsuario = ? WHERE id_parcela = ?");
             $sentenciaParcela->bind_param("sii", $nombreParcela, $IdUsuario, $id_parcela);
             $sentenciaParcela->execute();
-            
-
 
             // Verificar si la actualización de la parcela fue exitosa
             $actualizoAlgunaCoordenada = false;
@@ -398,8 +390,6 @@ switch ($requestMethod) {
                         }
                         break;
 
-
-
                     case 'volumen_leche':
                         $Numero_pendiente = $data->Numero_pendiente;
                         $litros = $data->litros;
@@ -422,7 +412,6 @@ switch ($requestMethod) {
                             echo json_encode(["mensaje" => "Error ejecutando la actualización: " . $sentencia->error]);
                         }
                         break;
-
 
                     case 'dias_pasto':
                         $id_vaca_pasto = $data->id_vaca_pasto;
@@ -453,7 +442,6 @@ switch ($requestMethod) {
                         $hora_apertura = $data->hora_apertura;
                         $hora_cierre = $data->hora_cierre;
                         
-                    
                         // Las contraseñas coinciden
                         $sentencia = $conexion->prepare("UPDATE puerta SET hora_apertura = ?, hora_cierre = ? WHERE id_puerta = ?");
                         $sentencia->bind_param("ssi",$hora_apertura,$hora_cierre, $id_puerta);
@@ -477,16 +465,14 @@ switch ($requestMethod) {
                         $longitud = $data->longitud;
                         $latitud = $data->latitud;
                         
-                    
                         // Las contraseñas coinciden
                         $sentencia = $conexion->prepare("UPDATE Pasto SET Numero_pendiente = ?, longitud = ?, latitud = ? WHERE id_vaca_gps = ?");
                         $sentencia->bind_param("iddi", $Numero_pendiente,$longitud,$latitud, $id_vaca_gps);
                         
-        
                         // Ejecutar la sentencia
                         if ($sentencia->execute()) {
                             if ($sentencia->affected_rows > 0) {
-                                echo json_encode(["mensaje" => "GPS actualizado correctamente"]);
+                                echo json_encode(["mensaje" => "GPS actualizad correctamente"]);
                             } else {
                                 echo json_encode(["mensaje" => "No se actualizó"]);
                             }
@@ -499,7 +485,6 @@ switch ($requestMethod) {
                         header("HTTP/1.1 404 Not Found");
                         exit();
                 }
-
 
             }else{
                 $datosCrudos = file_get_contents("php://input");
@@ -627,7 +612,6 @@ switch ($requestMethod) {
                         $Numero_pendiente = $data->Numero_pendiente;
                         $fecha_parto = $data->fecha_parto;
                     
-                    
                         // Las contraseñas coinciden
                         $sentencia = $conexion->prepare("INSERT INTO Partos(Numero_pendiente,IdUsuario, fecha_parto) VALUES(?,?,?)");
                         $sentencia->bind_param("iis", $Numero_pendiente,$IdUsuario,$fecha_parto);
@@ -744,7 +728,6 @@ switch ($requestMethod) {
                 $Numero_pendiente =  $data->Numero_pendiente;
                 $Fecha_Nacimiento =  $data->Fecha_nacimiento;
                 
-                
                 // Las contraseñas coinciden
                 $sentencia = $conexion->prepare("INSERT INTO Vaca( Numero_pendiente,IdUsuario,Fecha_nacimiento)  VALUES(?,?)");
                 $sentencia->bind_param("sii",$Numero_pendiente,$IdUsuario,$Fecha_Nacimiento);
@@ -791,12 +774,11 @@ switch ($requestMethod) {
             }else {
                 echo json_encode(["mensaje" => "Error al enviar el Mail"]);
             }
-
         }
         break;
         
     case 'DELETE':
-        if($uri[1]='parcelas' and isset($uri[2]) ){
+        if($uri[1] == 'parcelas' and isset($uri[2]) ){
 
             // Obtener el ID de la parcela a eliminar
             $idParcela = $uri[2];
@@ -830,122 +812,146 @@ switch ($requestMethod) {
                 switch ($uri[2]) {
                     case 'enfermedades':
                         // Preparar la sentencia SQL
-                        $id_enfermedad_vaca = $data->id_enfermedad_vaca;
+                        $id_enfermedad_vaca = $uri[3];
 
                         $sentencia = $conexion->prepare("DELETE FROM Enfermedades WHERE id_enfermedad_vaca = ?");
                         $sentencia->bind_param("i", $id_enfermedad_vaca);
 
-                        // Ejecutar y verificar el resultado
                         if ($sentencia->execute()) {
-                            echo "Vaca creada";
+                            if ($sentencia->affected_rows > 0){
+                                echo json_encode(["mensaje" => "Enfermedad eliminada"]);
+                            }else{
+                                echo json_encode(["mensaje" => "No se ah podido eliminar la Enfermedad"]);
+                            }
                         } else {
-                            echo "Error al eliminar la vaca";
+                            echo json_encode(["mensaje" => "Error al eliminar la Enfermedad"]);
                         }
-
                         // Cerrar la sentencia
                         $sentencia->close();
                         break;
                         
                     case 'fechas_parto':
                         // Preparar la sentencia SQL
-                        $id_vaca_parto =  $data->id_vaca_parto;
+                        $id_vaca_parto =  $uri[3];
 
                         $sentencia = $conexion->prepare("DELETE FROM Partos WHERE id_vaca_parto = ?");
                         $sentencia->bind_param("i", $id_vaca_parto);
 
                         // Ejecutar y verificar el resultado
                         if ($sentencia->execute()) {
-                            echo "Vaca creada";
+                            if ($sentencia->affected_rows > 0){
+                                echo json_encode(["mensaje" => "Parto eliminado"]);
+                            }else{
+                                echo json_encode(["mensaje" => "No se ah podido eliminar el Parto"]);
+                            }
                         } else {
-                            echo "Error al eliminar la vaca";
+                            echo json_encode(["mensaje" => "Error al eliminar el Parto"]);
                         }
-
                         // Cerrar la sentencia
                         $sentencia->close();
                         break;
                         
                     case 'volumen_leche':
                         // Preparar la sentencia SQL
-                        $id_vaca_leite =  $data->id_vaca_leite;
+                        $id_vaca_leite =  $uri[3];
 
                         $sentencia = $conexion->prepare("DELETE FROM Leite WHERE id_vaca_leite = ?");
                         $sentencia->bind_param("i", $id_vaca_leite);
 
                         // Ejecutar y verificar el resultado
                         if ($sentencia->execute()) {
-                            echo "Vaca creada";
+                            if ($sentencia->affected_rows > 0){
+                                echo json_encode(["mensaje" => "Leche eliminada"]);
+                            }else{
+                                echo json_encode(["mensaje" => "No se ah podido eliminar la Leche"]);
+                            }
                         } else {
-                            echo "Error al eliminar la vaca";
-                        } 
+                            echo json_encode(["mensaje" => "Error al eliminar la Leche"]);
+                        }
+                        // Cerrar la sentencia
+                        $sentencia->close();
                         break;
                             
                     case 'dias_pasto':
-                        $id_vaca_pasto =  $data->id_vaca_pasto;
+                        $id_vaca_pasto =  $uri[3];
 
                         $sentencia = $conexion->prepare("DELETE FROM Pasto WHERE  id_vaca_pasto = ?");
                         $sentencia->bind_param("i", $id_vaca_pasto);
 
                         // Ejecutar y verificar el resultado
                         if ($sentencia->execute()) {
-                            echo "Vaca creada";
+                            if ($sentencia->affected_rows > 0){
+                                echo json_encode(["mensaje" => "Pasto eliminado"]);
+                            }else{
+                                echo json_encode(["mensaje" => "No se ah podido eliminar el Pasto"]);
+                            }
                         } else {
-                            echo "Error al eliminar la vaca";
-                        } 
+                            echo json_encode(["mensaje" => "Error al eliminar el Pasto"]);
+                        }
+                        // Cerrar la sentencia
+                        $sentencia->close();
                         break;
                     case 'gps':
                         // Preparar la sentencia SQL
-                        $id_vaca_gps =  $data->id_vaca_gps;
+                        $id_vaca_gps =  $uri[3];
 
                         $sentencia = $conexion->prepare("DELETE FROM gps WHERE  id_vaca_gps = ?");
                         $sentencia->bind_param("i", $id_vaca_gps);
 
                         // Ejecutar y verificar el resultado
                         if ($sentencia->execute()) {
-                            echo "gps creada";
+                            if ($sentencia->affected_rows > 0){
+                                echo json_encode(["mensaje" => "GPS eliminado"]);
+                            }else{
+                                echo json_encode(["mensaje" => "No se ah podido eliminar el GPS"]);
+                            }
                         } else {
-                            echo "Error al eliminar la vaca";
-                        } 
+                            echo json_encode(["mensaje" => "Error al eliminar el GPS"]);
+                        }
+                        // Cerrar la sentencia
+                        $sentencia->close();
                         break;
                     case 'puerta':
                         // Preparar la sentencia SQL
-                        $id_puerta =  $data->id_puerta;
+                        $id_puerta =  $uri[3];
 
                         $sentencia = $conexion->prepare("DELETE FROM puerta WHERE  id_puerta = ?");
                         $sentencia->bind_param("i", $id_puerta);
 
                         // Ejecutar y verificar el resultado
                         if ($sentencia->execute()) {
-                            echo "puerta creada";
+                            if ($sentencia->affected_rows > 0){
+                                echo json_encode(["mensaje" => "Puerta eliminada"]);
+                            }else{
+                                echo json_encode(["mensaje" => "No se ah podido eliminar la Puerta"]);
+                            }
                         } else {
-                            echo "Error al eliminar la vaca";
-                        } 
+                            echo json_encode(["mensaje" => "Error al eliminar la Puerta"]);
+                        }
+                        // Cerrar la sentencia
+                        $sentencia->close();
                         break;
                     
-                
                     default:
-                        header("HTTP/1.1 404 Not Found");
-                        exit();
+                        $Numero_pendiente = $uri[2];
+
+                        $sentencia = $conexion->prepare("DELETE FROM Vaca WHERE Numero_pendiente = ? AND IdUsuario = ?");
+                        $sentencia->bind_param("ii", $Numero_pendiente,$IdUsuario);
+        
+                        // Ejecutar y verificar el resultado
+                        if ($sentencia->execute()) {
+                            if ($sentencia->affected_rows > 0){
+                                echo json_encode(["mensaje" => "Vaca eliminada"]);
+                            }else{
+                                echo json_encode(["mensaje" => "No se ah podido eliminar la vaca"]);
+                            }
+                        } else {
+                            echo json_encode(["mensaje" => "Error al eliminar la vaca"]);
+                        }
+        
+                        // Cerrar la sentencia
+                        $sentencia->close();
                 }
-
-            }else{
-                //comprobamos el /vaca
-                //if(isset($uri[3] && $uri[3]=='vaca')){
-                // Preparar la sentencia SQL
-                $Numero_pendiente = $data->Numero_pendiente;
-                
-
-                $sentencia = $conexion->prepare("DELETE FROM Vaca WHERE Numero_pendiente = ? AND IdUsuario = ?");
-                $sentencia->bind_param("ii", $Numero_pendiente,$IdUsuario);
-
-                // Ejecutar y verificar el resultado
-                if ($sentencia->execute()) {
-                    echo "Vaca creada";
-                } else {
-                    echo "Error al eliminar la vaca";
-                }
-
-                // Cerrar la sentencia
-                $sentencia->close();
             }
         }
         break;
@@ -953,5 +959,3 @@ switch ($requestMethod) {
         header("HTTP/1.1 404 Not Found");
         exit();
 }
-
-?>
