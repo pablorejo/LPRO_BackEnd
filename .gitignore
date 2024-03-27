@@ -1,0 +1,6 @@
+/.htaccess
+/PHPMailer
+/crear_usuario.php?nombre=Pedro
+/log_parametros.txt
+/obtener_vacas.php
+/validar_usuario.php
