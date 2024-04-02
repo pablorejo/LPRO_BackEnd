@@ -67,9 +67,9 @@ VALUES
 (1005, 1, '2010-05-01', 'Buena productora de leche. Genética valiosa para futuras crías.',null,null),
 (1006, 1, '2010-06-01', 'Sensible a cambios climáticos. Necesita alojamiento especial durante el invierno.',1003,1),
 (1007, 1, '2010-07-01', '',1003,1),
-(1008, 2, '2010-08-01', 'Madre ejemplar. Ha tenido varios partos sin complicaciones.',null,null),
-(1009, 2, '2010-09-01', 'Requiere dieta especial debido a sensibilidades alimenticias.',1008,2),
-(1010, 2, '2010-10-01', 'Excelente temperamento. Fácil de manejar durante el ordeño y los chequeos veterinarios.',1008,2);
+(1008, 1, '2010-08-01', 'Madre ejemplar. Ha tenido varios partos sin complicaciones.',null,null),
+(1009, 1, '2010-09-01', 'Requiere dieta especial debido a sensibilidades alimenticias.',1008,1),
+(1010, 1, '2010-10-01', 'Excelente temperamento. Fácil de manejar durante el ordeño y los chequeos veterinarios.',1008,1);
 
 CREATE TABLE IF NOT EXISTS Enfermedades (
     id_enfermedad_vaca INT AUTO_INCREMENT PRIMARY KEY,
@@ -166,19 +166,10 @@ CREATE TABLE IF NOT EXISTS gps (
     IdUsuario INT NOT NULL,
     latitud DOUBLE NOT NULL,
     longitud DOUBLE NOT NULL,
-    fecha TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_vaca_gps FOREIGN KEY (Numero_pendiente, IdUsuario) REFERENCES Vaca(Numero_pendiente, IdUsuario) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-INSERT INTO gps (Numero_pendiente,IdUsuario,latitud, longitud)
-VALUES 
-(1001,1,43.31164765757602, -8.41805161849009),
-(1001,1,43.311597732036496, -8.41626661611641),
-(1001,1,43.31193316579331, -8.416527059726878),
-(1001,1,43.31067584103942, -8.416431326485327),
-(1001,1,43.31061090648096, -8.417790435170705),
-(1002,1,43.31099032969088, -8.415775759833384),
-(1002,1,43.31099032969088, -8.415775759833384);
 
 CREATE TABLE IF NOT EXISTS puerta (
     id_puerta INT AUTO_INCREMENT PRIMARY KEY,
@@ -198,7 +189,8 @@ CREATE TABLE IF NOT EXISTS parcela(
 
 INSERT INTO parcela (IdUsuario,nombre_parcela)
 VALUES 
-(1, "parcela casa");
+(1, "parcela casa"),
+(1, "parcela cuvi");
 
 CREATE TABLE IF NOT EXISTS coordenadas (
     id_esquina INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
@@ -235,5 +227,14 @@ INSERT INTO coordenadas ( id_parcela, latitude, longitude) VALUES
 (1, 42.222786464987315, -7.748439833521842),
 (1, 42.22270055848854, -7.748388200998306),
 (1, 42.222660088045444, -7.748359031975268),
-(1, 42.22266828145012, -7.748302705585957);
+(1, 42.22266828145012, -7.748302705585957),
+(2,42.1708749220415 ,  -8.684778213500977),
+(2,42.17088784344455 ,  -8.683796525001526),
+(2,42.171329902931646 ,  -8.683318421244621),
+(2,42.171783638124204 ,   -8.68295531719923),
+(2,42.17215164330223 ,  -8.682750463485718),
+(2,42.17232210277389 ,  -8.683327473700047),
+(2,42.17273135272034 ,  -8.684871755540371),
+(2,42.17178438357912 ,   -8.68525430560112);
+
 

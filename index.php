@@ -278,6 +278,7 @@ switch ($requestMethod) {
         break;
 
     case 'PUT':
+
         if($uri[1] =='parcelas'){
             // Obtener los datos de la parcela
             $id_parcela = $data->id_parcela;
@@ -348,12 +349,14 @@ switch ($requestMethod) {
                         $fecha_inicio =  $data->fecha_inicio;
                         $fecha_fin =  $data->fecha_fin;
                         $Medicamento= $data->Medicamento;
-                    
-                        // Las contraseñas coinciden
-                        $sentencia = $conexion->prepare("UPDATE Enfermedades SET Numero_pendiente = ?, Medicamento = ?, Enfermedad = ?, fecha_inicio = ?, fecha_fin = ?, periocidad_en_dias = ? WHERE id_enfermedad_vaca = ?");
-                        $sentencia->bind_param("issssi", $Numero_pendiente, $Medicamento, $Enfermedad, $fecha_inicio,$fecha_fin, $id_enfermedad_vaca);
+                        $periocidad_en_dias = $data->periocidad_en_dias;
+                        $nota = $data->nota;
                         
-        
+                        // Las contraseñas coinciden
+                        $sentencia = $conexion->prepare("UPDATE Enfermedades SET nota = ?, Medicamento = ?, Enfermedad = ?, fecha_inicio = ?, fecha_fin = ?, periocidad_en_dias = ? WHERE id_enfermedad_vaca = ? AND Numero_pendiente = ?");
+                        $sentencia->bind_param("sssssiii", $nota, $Medicamento, $Enfermedad, $fecha_inicio,$fecha_fin,$periocidad_en_dias, $id_enfermedad_vaca, $Numero_pendiente);
+                        
+                        
                         // Ejecutar la sentencia
                         if ($sentencia->execute()) {
                             if ($sentencia->affected_rows > 0) {
@@ -371,11 +374,12 @@ switch ($requestMethod) {
                         $Numero_pendiente = $data->Numero_pendiente;
                         $fecha_parto = $data->fecha_parto;
                         $id_vaca_parto= $data->id_vaca_parto;
+                        $nota = $data->nota;
                     
                     
                         // Las contraseñas coinciden
-                        $sentencia = $conexion->prepare("UPDATE Partos SET Numero_pendiente = ?, fecha_parto = ? WHERE id_vaca_parto = ?");
-                        $sentencia->bind_param("isi", $Numero_pendiente,$fecha_parto, $id_vaca_parto);
+                        $sentencia = $conexion->prepare("UPDATE Partos SET Numero_pendiente = ?, fecha_parto = ?, nota = ? WHERE id_vaca_parto = ?");
+                        $sentencia->bind_param("issi", $Numero_pendiente,$fecha_parto,$nota, $id_vaca_parto);
                         
         
                         // Ejecutar la sentencia
@@ -583,20 +587,34 @@ switch ($requestMethod) {
                         $fecha_inicio = $data->fecha_inicio;
                         $fecha_fin = $data->fecha_fin;
                         $PeriocidadEnDias = $data->periocidad_en_dias;
-
+                        $nota = $data->nota;
 
                         // Preparar la sentencia SQL
-                        $sentencia = $conexion->prepare("INSERT INTO Enfermedades (Numero_pendiente, IdUsuario, Medicamento, Enfermedad, fecha_inicio, fecha_fin, periocidad_en_dias) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                        $sentencia->bind_param("iissssi", $Numero_pendiente, $IdUsuario, $Medicamento, $Enfermedad, $fecha_inicio, $fecha_fin, $PeriocidadEnDias);
+                        $sentencia = $conexion->prepare("INSERT INTO Enfermedades (Numero_pendiente, IdUsuario, Medicamento, Enfermedad, fecha_inicio, fecha_fin, nota, periocidad_en_dias) VALUES (?, ?, ?, ?, ?, ?, ?,?)");
+                        $sentencia->bind_param("iisssssi", $Numero_pendiente, $IdUsuario, $Medicamento, $Enfermedad, $fecha_inicio, $fecha_fin, $nota, $PeriocidadEnDias);
 
                         // Ejecutar la sentencia
                         if ($sentencia->execute()) {
-
                             // Verificar si se insertó la enfermedad
                             if ($sentencia->affected_rows > 0) {
+                                
+                                $resultadoEnfermedades = $sentencia->get_result();
+                                
+                                $jsonEnfermedad = [];
 
-                                $idNuevaEnfermedad = $sentencia->insert_id; // Obtener el ID de la nueva enfermedad insertada
-                                echo json_encode(["mensaje" => "Enfermedad insertada con éxito", "id" => $idNuevaEnfermedad]);
+                                $idNuevaEnfermedad = $conexion->insert_id; // Obtener el ID del nuevo parto
+                                $consulta = $conexion->prepare("SELECT * FROM Enfermedades WHERE id_enfermedad_vaca = ?");
+                                $consulta->bind_param("i", $idNuevaEnfermedad);
+                                $consulta->execute();
+                                $resultado = $consulta->get_result();
+                                $enfermedad = []; // Corregido: Inicializar el array correctamente
+                                if ($fila = $resultado->fetch_assoc()) {
+                                    // Devolver los datos como JSON
+                                    $enfermedad = $fila;
+                                }
+                                $enfermedad["mensaje"] = "Enfermedad insertada con éxito";
+                                echo json_encode($enfermedad);
+
                             } else {
                                 echo json_encode(["mensaje" => "No se pudo insertar la enfermedad"]);
                             }
@@ -611,10 +629,11 @@ switch ($requestMethod) {
                         
                         $Numero_pendiente = $data->Numero_pendiente;
                         $fecha_parto = $data->fecha_parto;
+                        $nota = $data->nota;
                     
                         // Las contraseñas coinciden
-                        $sentencia = $conexion->prepare("INSERT INTO Partos(Numero_pendiente,IdUsuario, fecha_parto) VALUES(?,?,?)");
-                        $sentencia->bind_param("iis", $Numero_pendiente,$IdUsuario,$fecha_parto);
+                        $sentencia = $conexion->prepare("INSERT INTO Partos(Numero_pendiente,IdUsuario, fecha_parto, nota) VALUES(?,?,?,?)");
+                        $sentencia->bind_param("iiss", $Numero_pendiente,$IdUsuario,$fecha_parto, $nota);
                         
                         // Ejecutar la sentencia
                         $sentencia->execute();
@@ -629,11 +648,16 @@ switch ($requestMethod) {
                             $consulta->execute();
                             $resultado = $consulta->get_result();
                             
+                            $parto = []; // Corregido: Inicializar el array correctamente
                             if ($fila = $resultado->fetch_assoc()) {
                                 // Devolver los datos como JSON
-                                echo json_encode($fila);
+                                $parto = $fila;
                             }
-                        } 
+                            $parto['mensaje'] = "Parto añadido con éxito";
+                            echo json_encode($parto);
+                        } else{
+                            echo json_encode(["mensaje" => "No se pudo insertar el parto"]);
+                        }
                         break;
                         
                     case 'volumen_leche':
@@ -747,33 +771,31 @@ switch ($requestMethod) {
         }elseif($uri[1] =='contacto'){
             require("envioMails.php");
 
-            $asunto =  $data->asunto;
-            $cuerpo = $data->cuerpo;
+            $asunto =  $_POST["asunto"];
+            $cuerpo = $_POST["cuerpo"];
+            $cuerpo = $_POST["usuario"];
+
             echo json_encode(["asunto"  => $asunto,
-                              "cuerpo"  => $cuerpo,
-                              "usuario" => $IdUsuario]);
-
+            "cuerpo"  => $cuerpo,
+            "usuario" => $IdUsuario]);
+            
             $sentencia = $conexion->prepare("SELECT correo FROM usuario 
-                                             WHERE IdUsuario = ?");
+                                             WHERE id = ?");
             $sentencia->bind_param('i',$IdUsuario);
-
+            
             // Ejecutar la sentencia
             $sentencia->execute();
-
+            
             // Obtener el resultado
-            $email = $sentencia->get_result();
-
-            $email = "carlos@fernandezdeus.es";
-
-            echo json_encode(["mensaje" => "Dentro función"]);
-
-            $response = sendMail($email, $asunto, $cuerpo);
-
-            if($response == "success"){
-                echo json_encode(["mensaje" => "Mail enviado con éxito"]);
-            }else {
-                echo json_encode(["mensaje" => "Error al enviar el Mail"]);
-            }
+            $resultado = $sentencia->get_result();
+            $fila = $resultado->fetch_assoc();
+            
+            $email = $fila['correo'];
+            sendMail($email, $asunto, $cuerpo);
+            
+        }elseif($uri[1] == 'llamada'){
+ 	        require("asterisk.php");
+            call();
         }
         break;
         
@@ -833,8 +855,7 @@ switch ($requestMethod) {
                     case 'fechas_parto':
                         // Preparar la sentencia SQL
                         $id_vaca_parto =  $uri[3];
-
-                        $sentencia = $conexion->prepare("DELETE FROM Partos WHERE id_vaca_parto = ?");
+                        $sentencia = $conexion->prepare("DELETE FROM Partos WHERE id_vaca_parto = ? ");
                         $sentencia->bind_param("i", $id_vaca_parto);
 
                         // Ejecutar y verificar el resultado
@@ -934,7 +955,6 @@ switch ($requestMethod) {
                     
                     default:
                         $Numero_pendiente = $uri[2];
-
                         $sentencia = $conexion->prepare("DELETE FROM Vaca WHERE Numero_pendiente = ? AND IdUsuario = ?");
                         $sentencia->bind_param("ii", $Numero_pendiente,$IdUsuario);
         
