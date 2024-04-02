@@ -47,7 +47,8 @@
                     'apellidos' => $fila['apellidos'],
                     'correo' => $fila['correo'],
                     "session_id" => session_id(),
-                    "nota" => $fila['nota']
+                    "nota" => $fila['nota'],
+                    "mensaje" => "Sesión inciada"
                 ];
 
             
@@ -136,9 +137,8 @@
             
                 echo json_encode($datos_usuario ?: ["mensaje" => "ERROR"]);
 
-
             }else{
-                echo "Algo ha salido mal";
+                echo json_encode(["mensaje" => "Algo ha salido mal"]);
             }
         }
     // }
