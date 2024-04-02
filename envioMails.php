@@ -27,14 +27,14 @@ function sendMail($email, $subject, $message){
         $mail->Host       = MAILHOST;                               //Set the SMTP server to send through
         $mail->Username   = USERMAIL;                               //SMTP username
         $mail->Password   = PASSWORD;                               //SMTP password
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTTLS;        //Enable implicit TLS encryption
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;        //Enable implicit TLS encryption
         $mail->Port       = 587;                                    //TCP port to connect to; use 587 if you have set `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`
-
+        
         //Recipients
         $mail->setFrom(SEND_FROM, SEND_FROM_NAME);
         $mail->addAddress($email);                                  
         $mail->addReplyTo(REPLAY_TO, REPLAY_TO_NAME); 
-        
+                
         //Content
         $mail->isHTML(true);                                        //Set email format to HTML
         $mail->Subject = $subject;
