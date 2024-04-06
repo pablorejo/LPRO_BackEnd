@@ -795,7 +795,12 @@ switch ($requestMethod) {
             
         }elseif($uri[1] == 'llamada'){
  	        require("asterisk.php");
-            call();
+
+            $numeroPendiente = $_POST["numeroPendiente"];
+
+            echo json_encode(["numeroPendiente" => $numeroPendiente]);
+
+            call($numeroPendiente);
         }
         break;
         

@@ -14,8 +14,8 @@ Variable: id_vaca=1
 Priority: 1
 */
 
-function call(){
-    $oSocket = fsockopen("192.168.1.71", 5038, $errno, $errstr, $timeout);
+function call($numeroPendiente){
+    $oSocket = fsockopen("192.168.0.22", 5038, $errno, $errstr, $timeout);
     if (!$oSocket) {
             echo "$errstr ($errno)<br>\n";
     } else {
@@ -30,12 +30,14 @@ function call(){
         fputs($oSocket, "CallerId: MuundoGando\r\n");
         fputs($oSocket, "Exten: 1\r\n");
         fputs($oSocket, "Context: muundogando\r\n");
-        fputs($oSocket, "Variable: id_vaca=1\r\n");
+        fputs($oSocket, "Variable: id_vaca=$numeroPendiente\r\n");
         fputs($oSocket, "Priority: 1\r\n\r\n");
 
         fputs($oSocket, "Action: Logoff\r\n\r\n");
         sleep(2);
         fclose($oSocket);
+
+        echo 'Llamada realizada con EXITO!';
     }
 }
     
