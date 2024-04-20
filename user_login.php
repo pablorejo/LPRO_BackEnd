@@ -94,16 +94,16 @@
                             $vaca['partos'][] = $enfermedad;
                         }
                         
-                        $vaca['datosGps'] = [];
-                        $sentenciaEnfermedades = $conexion->prepare("SELECT * FROM gps WHERE Numero_pendiente = ? AND IdUsuario = ?");
-                        // Suponiendo que $vaca['Numero_pendiente'] existe y contiene el número de pendiente de la vaca
-                        $sentenciaEnfermedades->bind_param('ii', $vaca['Numero_pendiente'], $IdUsuario);
-                        $sentenciaEnfermedades->execute();
-                        $resultadoEnfermedades = $sentenciaEnfermedades->get_result();
+                        // $vaca['datosGps'] = [];
+                        // $sentenciaEnfermedades = $conexion->prepare("SELECT * FROM gps WHERE Numero_pendiente = ? AND IdUsuario = ?");
+                        // // Suponiendo que $vaca['Numero_pendiente'] existe y contiene el número de pendiente de la vaca
+                        // $sentenciaEnfermedades->bind_param('ii', $vaca['Numero_pendiente'], $IdUsuario);
+                        // $sentenciaEnfermedades->execute();
+                        // $resultadoEnfermedades = $sentenciaEnfermedades->get_result();
             
-                        while ($enfermedad = $resultadoEnfermedades->fetch_assoc()) {
-                            $vaca['datosGps'][] = $enfermedad;
-                        }
+                        // while ($enfermedad = $resultadoEnfermedades->fetch_assoc()) {
+                        //     $vaca['datosGps'][] = $enfermedad;
+                        // }
                         
                         
                         
@@ -131,6 +131,30 @@
                         while ($coordenada = $resultadoCoordenadas->fetch_assoc()) {
                             $parcela['coordenadas'][] = $coordenada;
                         }
+                        
+                        $parcela['sector'];
+                        $sentenciaCoordenadas = $conexion->prepare("SELECT * FROM sector WHERE id_parcela = ?");
+                        // Suponiendo que $vaca['Numero_pendiente'] existe y contiene el número de pendiente de la vaca
+                        $sentenciaCoordenadas->bind_param('i', $parcela['id_parcela']);
+                        $sentenciaCoordenadas->execute();
+                        $resultadoCoordenadas = $sentenciaCoordenadas->get_result();
+
+                        while ($sector = $resultadoCoordenadas->fetch_assoc()) {
+
+                            $sector['coordenadasSector'] = [];
+                            $sentenciaCoordenadas = $conexion->prepare("SELECT * FROM coordenadas_sector WHERE id_sector = ?");
+                            // Suponiendo que $vaca['Numero_pendiente'] existe y contiene el número de pendiente de la vaca
+                            $sentenciaCoordenadas->bind_param('i', $sector['id_sector']);
+                            $sentenciaCoordenadas->execute();
+                            $resultadoCoordenadas = $sentenciaCoordenadas->get_result();
+
+                            while ($coordenada = $resultadoCoordenadas->fetch_assoc()) {
+                                $sector['coordenadasSector'][] = $coordenada;
+                            }
+
+                            $parcela['sector'] = $sector;
+                        }
+
                         $datos_usuario['parcelas'][] = $parcela;
                     }
                 }

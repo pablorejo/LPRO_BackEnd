@@ -12,6 +12,14 @@ $ficheros = file_get_contents("php://input");
 
 $data = json_decode($ficheros);
 
+$salida = array(); //contendrá cada linea salida desde la aplicación en Python
+
+// $directorio_python = ".";
+// exec("python hola.py", $salida);
+// echo $salida;    
+// for($i = 0; $i < count($salida); ++$i) {
+//     echo $salida[$i] ."\n";
+// }
 switch ($requestMethod) {
     case 'GET':
         if($uri[1] =='parcelas'){
@@ -278,8 +286,29 @@ switch ($requestMethod) {
         break;
 
     case 'PUT':
+        if($uri[1] =='sectores'){
+            // Obtener los datos de la parcela
+            $id_parcela = $data->id_parcela;
+            $id_sector = $data->id_sector;
 
-        if($uri[1] =='parcelas'){
+            $actualizoAlgunaCoordenada = false;
+            $coordenadas = $data->coordenadasSector;
+
+            $sqlDelete = $conexion->prepare("DELETE FROM coordenadas_sector WHERE id_parcela = ? AND id_sector = ?");
+            $sqlDelete->bind_param("ii", $id_parcela , $id_sector);
+            $sqlDelete->execute();
+
+            foreach ($coordenadas as $coordenada) {
+                $latitud = $coordenada->latitude;
+                $longitud = $coordenada->longitude;
+                
+                $sentenciaCoordenadas = $conexion->prepare("INSERT INTO coordenadas_sector (id_sector, id_parcela, latitude, longitude) VALUES (?,?,?,?)");
+                $sentenciaCoordenadas->bind_param("iidd", $id_sector,$id_parcela , $latitud, $longitud);
+                $sentenciaCoordenadas->execute();
+            }
+            echo json_encode(["mensaje" => "sector actualizado correctamente"]);
+                        
+        }else if($uri[1] =='parcelas'){
             // Obtener los datos de la parcela
             $id_parcela = $data->id_parcela;
             $nombreParcela = $data->nombre_parcela;
@@ -519,7 +548,97 @@ switch ($requestMethod) {
         break;
 
     case 'POST':
-        if($uri[1]=='parcelas'){
+        if($uri[1]=='gps'){
+            $fechaInicio = isset($data->inicio) ? $data->inicio : "None";
+            $fechaFin = isset($data->fin) ? $data->fin : "None";
+            $id_parcela = $data->id_parcela;
+            // $numeros_vaca = isset($data->numerosVacas) ? implode(',', $data->numerosVacas) : ""; // Convierte array a string separado por comas, maneja el caso donde $data->numerosVacas podría no estar definido
+
+            if (isset($data->numerosVacas) && is_array($data->numerosVacas)) {
+                // Limpia cada elemento del array
+                $numerosVaca = array_map('trim', $data->numerosVacas);
+                // Convierte el array a una cadena, separando los elementos con comas
+                $numeros_vaca = implode(',', $numerosVaca);
+            } else {
+                $numeros_vaca = "";
+            }
+            
+            if (isset($IdUsuario)) {
+                // $comando = escapeshellcmd("python python/conjunto_de_datos_rapido.py '$IdUsuario' '$fechaInicio' '$fechaFin' '$numeros_vaca'");
+                // Construye el comando asegurando que no haya saltos de línea ni caracteres adicionales
+                $comando = escapeshellcmd("python python/conjunto_de_datos_rapido.py '$IdUsuario' '$id_parcela' '$fechaInicio' '$fechaFin' '$numeros_vaca'");
+                $comando = str_replace(PHP_EOL, '', $comando); // Elimina saltos de línea del comando
+                exec($comando, $salida,$codigo_retorno);
+                if ($codigo_retorno == 0) {
+                    // La salida de exec está en un array, cada elemento es una línea de la salida
+                    $json_output = implode("\n", $salida);  // Convierte la salida en una sola cadena
+                    echo $json_output;  // Muestra o procesa el JSON
+                } else {
+                    echo json_encode(["mensaje" => "Error al ejecutar el script de Python. Código de retorno: $codigo_retorno"]);
+                }
+
+            } else {
+                echo json_encode(["mensaje" => "ID de usuario no especificado"]);
+            }
+        }
+        else if($uri[1]=='sectores'){
+            if ($uri[2] == 'recomendar'){
+                $id_parcela = $data->id_parcela;
+
+                if (isset($IdUsuario)) {
+                    // $comando = escapeshellcmd("python python/conjunto_de_datos_rapido.py '$IdUsuario' '$fechaInicio' '$fechaFin' '$numeros_vaca'");
+                    // Construye el comando asegurando que no haya saltos de línea ni caracteres adicionales
+                    $comando = escapeshellcmd("python3 python/recomendar_sector.py '$IdUsuario' '$id_parcela'");
+                    $comando = str_replace(PHP_EOL, '', $comando); // Elimina saltos de línea del comando
+
+                    exec($comando, $salida,$codigo_retorno);
+                    if ($codigo_retorno == 0) {
+                        // La salida de exec está en un array, cada elemento es una línea de la salida
+                        $json_output = implode("\n", $salida);  // Convierte la salida en una sola cadena
+                        echo $json_output;  // Muestra o procesa el JSON
+                    } else if ($codigo_retorno == 128){
+                        echo json_encode(["mensaje" => "No existe es sector de la parcela '$id_parcela'"]);
+                    }else if ($codigo_retorno == 129){
+                        echo json_encode(["mensaje" => "Ha entrado en un bucle infinito"]);
+                    }else {
+                        echo json_encode(["mensaje" =>  "Error al ejecutar el script de Python. Código de retorno: $codigo_retorno"]);
+                    }
+
+                } else {
+                    echo json_encode(["mensaje" => "ID de usuario no especificado"]);
+                }
+
+            }else{
+                $id_parcela = $data->id_parcela;
+                // Insertar la información de la parcela en la tabla 'parcela'
+                $sentencia = $conexion->prepare("INSERT INTO sector (id_parcela, IdUsuario) VALUES (?, ?)");
+                $sentencia->bind_param("ii", $id_parcela, $IdUsuario);
+                $sentencia->execute();
+                
+                // Obtener el id_parcela recién insertado
+                $id_sector = $sentencia->insert_id;
+                
+                // Insertar las coordenadas en la tabla 'coordenadas'
+                $coordenadas = $data->coordenadasSector;
+                
+                foreach ($coordenadas as $coordenada) {
+                    $latitud = $coordenada->latitude;
+                    $longitud = $coordenada->longitude;
+                    
+                    $sentenciaCoordenadas = $conexion->prepare("INSERT INTO coordenadas_sector (id_sector, id_parcela, latitude, longitude) VALUES (?,?,?,?)");
+                    $sentenciaCoordenadas->bind_param("iidd", $id_sector,$id_parcela , $latitud, $longitud);
+                    $sentenciaCoordenadas->execute();
+                }
+                
+                // Verificar si la inserción fue exitosa
+                if ($sentencia->affected_rows > 0) {
+                    echo json_encode(["mensaje" => "Parcela y coordenadas insertadas correctamente"]);
+                } else {
+                    echo json_encode(["mensaje" => "Error al insertar parcela y coordenadas"]);
+                }
+            }
+        }
+        else if($uri[1]=='parcelas'){
             $nombreParcela = $data->nombre_parcela;
             // Insertar la información de la parcela en la tabla 'parcela'
             $sentencia = $conexion->prepare("INSERT INTO parcela (IdUsuario,nombre_parcela) VALUES (?, ?)");
@@ -801,11 +920,70 @@ switch ($requestMethod) {
             echo json_encode(["numeroPendiente" => $numeroPendiente]);
 
             call($numeroPendiente);
+
+        }elseif($uri[1] == 'notificacion'){
+            require("notificacion.php");
+
+            $title = $_POST["title"];
+            $message = $_POST["message"];
+
+            echo json_encode(["title" => $title]);
+            echo json_encode(["message" => $message]);
+
+            notificacion($title, $message);
+        }elseif($uri[1] == 'correo'){
+            $destinatario = $_POST["destinatario"];
+            $rutaInformacion = $_POST["rutaInformacion"];
+            $nombreArchivo = basename($rutaInformacion);
+
+            echo json_encode(["variables" => "$destinatario $rutaInformacion $nombreArchivo"]);
+
+            $comando = escapeshellcmd("python3 python/correo.py '$destinatario' '$rutaInformacion' '$nombreArchivo'");
+            $comando = str_replace(PHP_EOL, '', $comando); // Elimina saltos de línea del comando
+            echo($comando);
+
+            exec($comando, $salida, $codigo_retorno);
+            if ($codigo_retorno == 0) {
+                // La salida de exec está en un array, cada elemento es una línea de la salida
+                $json_output = implode("\n", $salida);  // Convierte la salida en una sola cadena
+                echo $json_output;  // Muestra o procesa el JSON
+            } else {
+                echo json_encode(["mensaje" => "Error al ejecutar el script de Python. Código de retorno: $codigo_retorno"]);
+            }
         }
         break;
         
     case 'DELETE':
-        if($uri[1] == 'parcelas' and isset($uri[2]) ){
+        if($uri[1] == 'sectores' and isset($uri[2]) ){
+
+            // Obtener el ID de la parcela a eliminar
+            $id_sector = $uri[2];
+
+            // Iniciar una transacción para garantizar la consistencia de los datos
+            $conexion->begin_transaction();
+
+            // Eliminar las coordenadas asociadas a la parcela, esto igual no hace falta ya que en parcela tenemos on delete cascade
+            $sentenciaEliminarCoordenadas = $conexion->prepare("DELETE FROM coordenadas_sector WHERE id_sector = ?");
+            $sentenciaEliminarCoordenadas->bind_param("i", $id_sector);
+            $sentenciaEliminarCoordenadas->execute();
+
+            // Eliminar la parcela
+            $sentenciaEliminarParcela = $conexion->prepare("DELETE FROM sector WHERE id_sector = ?");
+            $sentenciaEliminarParcela->bind_param("i", $id_sector);
+            $sentenciaEliminarParcela->execute();
+
+            // Verificar si la parcela y las coordenadas asociadas fueron eliminadas correctamente
+            if ($sentenciaEliminarParcela->affected_rows > 0) {
+                // Confirmar la transacción si todo fue exitoso
+                $conexion->commit();
+                echo json_encode(["mensaje" => "Parcela y coordenadas eliminadas correctamente"]);
+            } else {
+                // Revertir la transacción si hubo un error
+                $conexion->rollback();
+                echo json_encode(["mensaje" => "Error al eliminar parcela y coordenadas"]);
+            }
+
+        }else if($uri[1] == 'parcelas' and isset($uri[2]) ){
 
             // Obtener el ID de la parcela a eliminar
             $idParcela = $uri[2];

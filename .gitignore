@@ -3,3 +3,10 @@
 /log_parametros.txt
 /obtener_vacas.php
 /validar_usuario.php
+.vscode
+python/myenv
+python/__pycache__
+python/instalacion_py.txt
+python/mapa.html
+python/mapaSector.html
+python/sectores.py.save
