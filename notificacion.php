@@ -8,8 +8,6 @@ function notificacion($title, $message){
 
     // Clave del servidor FCM
     $server_key = 'AAAAvwb3TCE:APA91bH5ljrS5_Hzk1pvWpmpLMLYDaq1UPJ7ssnvtjHh5qZev7G2qc-5-H3cWZuxy2LYSuGRS_T_8M4dlHyawhzIXSbJQGkz3FZrp6ezhlrEv96qwotwd0pzU3mgDN9vgyIpG4c6W635';
-
-    //$resultado = exec("python3 python/script.py");
     // Datos del mensaje:
     $message = [
         'to' => $notificationId,

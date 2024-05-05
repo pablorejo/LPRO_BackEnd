@@ -6,13 +6,12 @@ from conf import obtener_engine, obtener_coordenadas_parcela
 
 from shapely.geometry import Polygon, Point
 def verificar_argumentos():
-    if len(sys.argv) < 7:
+    if len(sys.argv) < 6:
         print(json.dumps({"mensaje": "Algo ha salido mal"}))
         sys.exit(-1)
-        
-    return sys.argv[1], sys.argv[2], sys.argv[3],sys.argv[4], sys.argv[5], sys.argv[6].split(",")
+    return sys.argv[1], sys.argv[2], sys.argv[3],sys.argv[4], sys.argv[5].split(",")
 
-def consultar_datos_gps(engine, id_usuario, fecha_inicio, fecha_fin, numeros_pendiente, id_parcela, tipo, limite=300):
+def consultar_datos_gps(engine, id_usuario, fecha_inicio, fecha_fin, numeros_pendiente, id_parcela, limite=300):
     numeros_in = ','.join(f"'{num.strip()}'" for num in numeros_pendiente if num.strip())
     where_clauses = [f"idusuario = '{id_usuario}'"]
     if numeros_in:
@@ -21,17 +20,16 @@ def consultar_datos_gps(engine, id_usuario, fecha_inicio, fecha_fin, numeros_pen
         where_clauses.append(f"fecha >= '{fecha_inicio}'")
     if fecha_fin != "None":
         where_clauses.append(f"fecha <= '{fecha_fin}'")
-    if tipo != "normal":
-        where_clauses.append(f"tipo = '{tipo}'")
         
     query_filtro = f"SELECT latitude, longitude, Numero_pendiente FROM gps WHERE id_parcela = {id_parcela} AND {' AND '.join(where_clauses)} ORDER BY RAND() LIMIT {limite};"
+    
     return pd.read_sql_query(query_filtro, engine, index_col='Numero_pendiente')
 
     
 def main():
-    id_usuario, id_parcela, fecha_inicio, fecha_fin, tipo, numeros_pendiente = verificar_argumentos()
+    id_usuario, id_parcela, fecha_inicio, fecha_fin, numeros_pendiente = verificar_argumentos()
     engine = obtener_engine() # Obtenemos el motor
-    data_df = consultar_datos_gps(engine, id_usuario, fecha_inicio, fecha_fin, numeros_pendiente,id_parcela, tipo) # Obtenemos el conjunto de datos gps
+    data_df = consultar_datos_gps(engine, id_usuario, fecha_inicio, fecha_fin, numeros_pendiente,id_parcela) # Obtenemos el conjunto de datos gps
     clusters_json = data_df.to_dict(orient='records')
     json_output = json.dumps(clusters_json, indent=4)
     print(json_output)

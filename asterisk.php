@@ -15,7 +15,9 @@ Priority: 1
 */
 
 function call($numeroPendiente){
-    $oSocket = fsockopen("192.168.0.22", 5038, $errno, $errstr, $timeout);
+//    $oSocket = fsockopen("192.168.0.22", 5038, $errno, $errstr, $timeout);
+$oSocket = fsockopen("172.20.10.9", 5038, $errno, $errstr, $timeout);
+
     if (!$oSocket) {
             echo "$errstr ($errno)<br>\n";
     } else {

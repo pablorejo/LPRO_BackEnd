@@ -106,7 +106,6 @@
                         // }
                         
                         
-                        
                         // Repetir para partos, leiteHistorico, etc.
                         $datos_usuario['vacas'][] = $vaca;
                     }

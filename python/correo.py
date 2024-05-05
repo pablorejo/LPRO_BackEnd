@@ -4,6 +4,7 @@ import ssl
 import smtplib
 from email.message import EmailMessage
 from datetime import datetime, timedelta
+from mapa import mapaCalor
 
 # ******************************************************************* #
 # ***************************** FUNCIONES *************************** # 
@@ -39,7 +40,7 @@ def traduccion_mes(mesIngles):
 # ******************************* MAIN ****************************** # 
 # ******************************************************************* #
 def main():
-    destinatario, rutaInformacion, nombreArchivo = verificar_argumentos()
+    destinatario, idUsuario, idParcela = verificar_argumentos()
     
     # Obtención del mes automática 
     mesDatos = (datetime.now() - timedelta(days=30)).strftime("%B")
@@ -56,6 +57,14 @@ def main():
         Hola!
         Dejamos adjunta la información del mes de """ + mesDatos + """."""
 
+    mapaCalor(idUsuario,idParcela,"normal")
+    mapaCalor(idUsuario,idParcela,"pastando")
+    mapaCalor(idUsuario,idParcela,"caminando")
+    mapaCalor(idUsuario,idParcela,"descansando")
+
+    rutaInformacion = ["./python/mapas/mapa_calor.html", "./python/mapas/mapa_calor_pastando.html", "./python/mapas/mapa_calor_caminando.html", "./python/mapas/mapa_calor_descansando.html"]
+    nombreArchivo = ["mapa_calor.html", "mapa_calor_pastando.html", "mapa_calor_caminando.html", "mapa_calor_descansando.html"]
+
     # Crear objeto de mail:
     em = EmailMessage()
     em['From'] = remitente
@@ -64,8 +73,9 @@ def main():
     em.set_content(cuerpo)
 
     # Adjuntar el archivo PDF
-    with open(rutaInformacion, 'rb') as archivo_pdf:
-        em.add_attachment(archivo_pdf.read(), maintype='application', subtype='pdf', filename=nombreArchivo)
+    for k in range(4):
+        with open(rutaInformacion[k], 'rb') as archivo_pdf:
+            em.add_attachment(archivo_pdf.read(), maintype='application', subtype='html', filename=nombreArchivo[k])
 
     # Añadir SSL (extra de seguridad)
     context = ssl.create_default_context()

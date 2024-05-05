@@ -1,0 +1,11 @@
+Numero_pendiente,IdUsuario,Fecha_nacimiento,idNumeroPendienteMadre,idUsuarioMadre,nota,segundos_pastando,segundos_descansando,segundos_caminando
+3732,1,2005-11-05,,0,Salud excelente,9720,45480,64680
+4264,1,2006-01-31,3732,1,Salud excelente,7320,59640,52920
+5859,1,2010-01-20,3732,1,,7320,54360,58200
+8891,1,2007-12-07,5859,1,Salud excelente,6960,48600,64320
+5373,1,2004-08-28,8891,1,Requiere atención,9480,56280,54000
+6874,1,2001-06-21,3732,1,Vaca líder,8400,54120,57360
+7744,1,2007-12-03,6874,0,Requiere atención,11520,50520,57840
+4468,1,2005-10-21,6874,1,Requiere atención,9480,46320,64080
+1705,1,2007-09-26,6874,0,Requiere atención,8520,51000,60240
+3599,1,2005-04-24,6874,0,,8040,55440,56400

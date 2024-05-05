@@ -23,11 +23,13 @@ CREATE TABLE IF NOT EXISTS Vaca (
     idNumeroPendienteMadre INT DEFAULT NULL,
     idUsuarioMadre INT DEFAULT NULL,
     nota TEXT,
-    minPastoVaca INT,
+    segundos_pastando INT,
+    segundos_descansando INT,
+    segundos_caminando INT,
     CHECK (Numero_pendiente >= 1000 AND Numero_pendiente <= 9999),
     FOREIGN KEY (IdUsuario) REFERENCES usuario(id) ON DELETE CASCADE ON UPDATE CASCADE,
     -- Establecemos que si se elimina a la madre se pongan a null los valores de la madre y si se actualiza a la madre se actualize tambien al hijo
-    CONSTRAINT fk_vaca_madre FOREIGN KEY (idNumeroPendienteMadre, idUsuarioMadre) REFERENCES Vaca(Numero_pendiente, IdUsuario) ON DELETE SET NULL ON UPDATE CASCADE,
+    -- CONSTRAINT fk_vaca_madre FOREIGN KEY (idNumeroPendienteMadre, idUsuarioMadre) REFERENCES Vaca(Numero_pendiente, IdUsuario) ON DELETE SET NULL ON UPDATE CASCADE,
     PRIMARY KEY (Numero_pendiente, IdUsuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -59,18 +61,18 @@ END;
 DELIMITER ;
 
 
-INSERT INTO Vaca (Numero_pendiente, IdUsuario, Fecha_nacimiento, nota, idNumeroPendienteMadre, idUsuarioMadre, minPastoVaca)
+INSERT INTO Vaca (Numero_pendiente, IdUsuario, Fecha_nacimiento, nota, idNumeroPendienteMadre, idUsuarioMadre)
 VALUES 
-(1001, 1, '2010-01-01', 'Vaca líder del rebaño. Muestra un temperamento calmado y es muy sociable.',null,null, 745),
-(1002, 1, '2010-02-01', 'Preferencia por pastos cercanos al estanque. Salud excelente.',null,null, 324),
-(1003, 1, '2010-03-01', 'Historial de mastitis. Requiere chequeos veterinarios frecuentes.',1001,1, 155),
-(1004, 1, '2010-04-01', 'Recuperada de lesión en pata trasera izquierda. Movilidad completa restaurada.',1001,1, 235),
-(1005, 1, '2010-05-01', 'Buena productora de leche. Genética valiosa para futuras crías.',null,null, 321),
-(1006, 1, '2010-06-01', 'Sensible a cambios climáticos. Necesita alojamiento especial durante el invierno.',1003,1, 152),
-(1007, 1, '2010-07-01', '',1003,1, 321),
-(1008, 1, '2010-08-01', 'Madre ejemplar. Ha tenido varios partos sin complicaciones.',null,null, 325),
-(1009, 1, '2010-09-01', 'Requiere dieta especial debido a sensibilidades alimenticias.',1008,1, 325),
-(1010, 1, '2010-10-01', 'Excelente temperamento. Fácil de manejar durante el ordeño y los chequeos veterinarios.',1008,1, 346);
+(1001, 1, '2010-01-01', 'Vaca líder del rebaño. Muestra un temperamento calmado y es muy sociable.',null,null),
+(1002, 1, '2010-02-01', 'Preferencia por pastos cercanos al estanque. Salud excelente.',null,null),
+(1003, 1, '2010-03-01', 'Historial de mastitis. Requiere chequeos veterinarios frecuentes.',1001,1),
+(1004, 1, '2010-04-01', 'Recuperada de lesión en pata trasera izquierda. Movilidad completa restaurada.',1001,1),
+(1005, 1, '2010-05-01', 'Buena productora de leche. Genética valiosa para futuras crías.',null,null),
+(1006, 1, '2010-06-01', 'Sensible a cambios climáticos. Necesita alojamiento especial durante el invierno.',1003,1),
+(1007, 1, '2010-07-01', '',1003,1),
+(1008, 1, '2010-08-01', 'Madre ejemplar. Ha tenido varios partos sin complicaciones.',null,null),
+(1009, 1, '2010-09-01', 'Requiere dieta especial debido a sensibilidades alimenticias.',1008,1),
+(1010, 1, '2010-10-01', 'Excelente temperamento. Fácil de manejar durante el ordeño y los chequeos veterinarios.',1008,1);
 
 CREATE TABLE IF NOT EXISTS Enfermedades (
     id_enfermedad_vaca INT AUTO_INCREMENT PRIMARY KEY,
@@ -115,8 +117,6 @@ VALUES
 (1001, 1, '2024-03-10', 'Parto rápido y sin asistencia. Ternero vigoroso y saludable.');
 
 
-
-
 CREATE TABLE IF NOT EXISTS parcela(
     id_parcela INT AUTO_INCREMENT UNIQUE NOT NULL,
     IdUsuario INT NOT NULL,
@@ -128,18 +128,45 @@ CREATE TABLE IF NOT EXISTS parcela(
 INSERT INTO parcela (IdUsuario,nombre_parcela)
 VALUES 
 (1, "parcela casa"),
-(1, "parcela cuvi");
+(1, "parcela cuvi"),
+(1, "parcela jesus"),
+(1, "prueba jesus vigo");
 
 CREATE TABLE IF NOT EXISTS gps (
     id_vaca_gps INT AUTO_INCREMENT PRIMARY KEY,
     Numero_pendiente INT NOT NULL,
     IdUsuario INT NOT NULL,
-    latitud DOUBLE NOT NULL,
-    longitud DOUBLE NOT NULL,
+    latitude DOUBLE NOT NULL,
+    longitude DOUBLE NOT NULL,
+    id_parcela INT,
+
+    tipo VARCHAR(255),
+    velocidad DOUBLE,
+    anomalia BOOLEAN,
+    fuera_del_recinto BOOLEAN,
+
     rssi DOUBLE,
     fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_vaca_gps FOREIGN KEY (Numero_pendiente, IdUsuario) REFERENCES Vaca(Numero_pendiente, IdUsuario) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- CREATE TABLE IF NOT EXISTS gps_analizado (
+--     id_vaca_gps INT AUTO_INCREMENT PRIMARY KEY,
+--     Numero_pendiente INT NOT NULL,
+--     IdUsuario INT NOT NULL,
+--     latitude DOUBLE NOT NULL,
+--     longitude DOUBLE NOT NULL,
+--     id_parcela INT,
+--     tipo VARCHAR(255),
+--     velocidade DOUBLE,
+--     anomalia BOOLEAN,
+--     fuera_del_recinto BOOLEAN,
+--     velocidad_m_s DOUBLE,
+--     distancia_a_otras_vacas DOUBLE,
+--     rssi DOUBLE,
+--     fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--     CONSTRAINT fk_vaca_gps FOREIGN KEY (Numero_pendiente, IdUsuario) REFERENCES Vaca(Numero_pendiente, IdUsuario) ON DELETE CASCADE ON UPDATE CASCADE
+-- ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE IF NOT EXISTS coordenadas (
     id_esquina INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
@@ -185,7 +212,17 @@ INSERT INTO coordenadas ( id_parcela, latitude, longitude) VALUES
 (2,42.17215164330223 ,  -8.682750463485718),
 (2,42.17232210277389 ,  -8.683327473700047),
 (2,42.17273135272034 ,  -8.684871755540371),
-(2,42.17178438357912 ,   -8.68525430560112);
+(2,42.17178438357912 ,   -8.68525430560112),
+(3,43.127987152360035 ,  -8.485743217170238), 
+(3,43.12846161228289 ,  -8.483846224844456), 
+(3,43.12783372899827 ,  -8.483420088887215), 
+(3,43.12739107474986 ,  -8.483696691691875), 
+(3,43.127008613026995 ,  -8.485622182488441),
+(4,42.222715952147226 ,  -8.73375367373228), 
+(4,42.222645439228366 ,  -8.73369500041008), 
+(4,42.22269335822756 , -8.733584359288216),
+(4,42.22275915368536 , -8.733649402856827);
+
 
 CREATE TABLE IF NOT EXISTS sector(
     id_sector INT AUTO_INCREMENT NOT NULL,

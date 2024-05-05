@@ -3,7 +3,7 @@ from geopy.distance import geodesic
 from geographiclib.geodesic import Geodesic
 import math
 import json
-from conf import obtener_coordenadas_parcela, obtener_coordenadas_sector,obtenerVacas, getMinPastoVacas, mensaje
+from conf import *
 import sys
 from numpy import log2
 import pandas as pd
@@ -120,7 +120,7 @@ def expandir_area(metros_cuadrados_expandir: int, area_original: int, coords_par
     
     diferencia_area = 0
     coords_subespacio_sugerido = coords_a_expandir.copy()
-
+    
     bucle = 0 
     while diferencia_area < ADD_AREA:
         for index, coordenada_tuple in coordeenadas_elegidas.items():
@@ -184,7 +184,34 @@ def find_vertices(points):
     
     return vertices
 
-
+def ajustar_vertices_subespacio(coords_subespacio, coords_parcela):
+    # Crear polígonos usando las listas de coordenadas
+    poligono_subespacio = Polygon(coords_subespacio)
+    poligono_parcela = Polygon(coords_parcela)
+    
+    # Lista para guardar los puntos más cercanos
+    puntos_cercanos = []
+    
+    # Iterar sobre cada punto en el polígono de la parcela
+    for punto in poligono_parcela.exterior.coords:
+        # Convertir el punto actual a un objeto Point
+        punto_actual = Point(punto)
+        
+        # Encontrar la distancia mínima entre el punto actual y el polígono del subespacio
+        distancia_minima = poligono_subespacio.exterior.distance(punto_actual)
+        
+        # Guardar el punto y la distancia mínima
+        puntos_cercanos.append((punto, distancia_minima))
+    
+    # Filtrar para obtener solo los puntos con la distancia mínima
+    if puntos_cercanos:
+        min_distancia = min(puntos_cercanos, key=lambda x: x[1])[1]
+        puntos_cercanos = [p for p, d in puntos_cercanos if d == min_distancia]
+    
+    return puntos_cercanos
+    
+    
+    
 ERROR_NO_HAY_COORDENADAS_SUB_ESPACIO = -128
 ERROR_BUCLE_INFINITO = -129
 
@@ -200,13 +227,17 @@ def obtener_recomendacion_sector(expansion_metros_cuadrados, coords_parcela ,coo
     
     ## Obtencion de las coordenadas
     coords_subespacio_touch_parcela = coordenadas_toca_parcela(coords_parcela,coords_subespacio) # Obtenemos las coordenadas del subespacio que toca la parcela
+    
+    
     coordeenadas_elegidas = seleccionar_coordenadas_desplazables(coords_subespacio_touch_parcela,coords_parcela) # Obtenemos las coordenadas que podemos desplazar
     coords_subespacio_touch_parcela_new = añadir_coordenadas_nuevas(coords_subespacio_touch_parcela,coordeenadas_elegidas) # Las añadimos a las coordenadas del subespacio a recomendar
     
+    area_sector = calcular_area_esferica(coords_subespacio) 
     area_parcela = calcular_area_esferica(coords_parcela)
     expandir = expansion_metros_cuadrados - area_parcela * porcentaje_de_error
     coords_sugeridas = None
     
+    expandir = area_parcela + 10000
     # Comprobamos que el area a expadir es menor que el area total de la parcela
     if (expandir <= area_parcela):
         mensaje("Es recomendable cambiar de parcela")
@@ -215,10 +246,17 @@ def obtener_recomendacion_sector(expansion_metros_cuadrados, coords_parcela ,coo
             coords_sugeridas = coords_parcela
             mensaje("La parcela se está quedando pequeña")
         else:
-            coords_subespacio_sugerido = expandir_area(expansion_metros_cuadrados,coords_subespacio,coords_subespacio_touch_parcela_new,coordeenadas_elegidas)
-            coords_sugeridas = find_vertices(list(coords_subespacio_sugerido.values()))
-
-            
+            if len(coords_subespacio_touch_parcela) < 3:
+                coords_subespacio_ajustadas = ajustar_vertices_subespacio(coords_subespacio, coords_parcela)
+                area_sector_calculada = calcular_area_esferica(coords_subespacio_ajustadas)
+                if (area_sector_calculada-area_sector >= expandir):
+                    coords_subespacio_sugerido = coords_subespacio_ajustadas
+                else:
+                    coords_subespacio_sugerido = expandir_area(expansion_metros_cuadrados,area_sector,coords_parcela,coords_subespacio_ajustadas,coordeenadas_elegidas)
+            else:
+                coords_subespacio_sugerido = expandir_area(expansion_metros_cuadrados,area_sector,coords_parcela,coords_subespacio_touch_parcela_new,coordeenadas_elegidas)
+        
+        coords_sugeridas = find_vertices(list(coords_subespacio_sugerido.values()))
         lista_de_diccionarios = [{'latitude': lat, 'longitude': lon} for lat, lon in coords_sugeridas]
         json_resultado = json.dumps(lista_de_diccionarios, indent=4)
         print(json_resultado)
@@ -226,9 +264,8 @@ def obtener_recomendacion_sector(expansion_metros_cuadrados, coords_parcela ,coo
 
 
 def calculoAreaSector(tiempoPastado, minPasto_m2):
-    areaSector = tiempoPastado * (1/minPasto_m2)
+    areaSector = (tiempoPastado/60) /minPasto_m2
     return areaSector
-
 
 
 
@@ -255,7 +292,6 @@ if __name__ == "__main__":
 
     coords_parcela = obtener_coordenadas_parcela(id_parcela, True) 
     areaParcela = calcular_area_esferica(coords_parcela)
-    
 
     # Crear un objeto de polígono Shapely para la extensión de tierra
     extencion_poligono = Polygon(coords_parcela)
@@ -264,14 +300,14 @@ if __name__ == "__main__":
     centroide = extencion_poligono.centroid
 
     # Calculo del área deseada para pastar:
-    minPasto = getMinPastoVacas(IdUsuario)
-    areaPastada = calculoAreaSector(minPasto, minMetroCuadradoPastoPeorCaso)
+    segundos_pastando = getSegundosPastando(IdUsuario)
+    areaPastada = calculoAreaSector(segundos_pastando, minMetroCuadradoPastoPeorCaso)
     
     # ************************************************** #
     coordenadas_sector = obtener_coordenadas_sector(id_parcela,True)
     area_sector = calcular_area_esferica(coordenadas_sector)
-    
-    expansion = 2*areaPastada - area_sector
+    expansion = 2*areaPastada - ((area_sector)*1.1) # Lo multiplicamos por 1.1 para asegurarnos de al menos expandirla un 10%
+    expansion = 5000
     if (expansion > 0):
         obtener_recomendacion_sector(expansion,coords_parcela=coords_parcela,coords_subespacio=coordenadas_sector)
     else:

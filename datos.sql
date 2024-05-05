@@ -1,5 +1,5 @@
 USE muundoGando
-INSERT INTO gps (Numero_pendiente,IdUsuario,latitud, longitud,fecha,id_parcela)
+INSERT INTO gps (Numero_pendiente,IdUsuario,latitude, longitude,fecha,id_parcela)
 VALUES 
 (1001,1,42.22163156139028,-7.748913948179949,'2024-03-19 12:33:02',1),
 (1001,1,42.22163104087275,-7.748912778912145,'2024-03-19 12:33:08',1),

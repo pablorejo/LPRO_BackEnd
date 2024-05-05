@@ -1,6 +1,9 @@
 <?php
+
 include 'conexion.php';
+
 session_start();
+
 header("Content-Type: application/json");
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -14,12 +17,6 @@ $data = json_decode($ficheros);
 
 $salida = array(); //contendrá cada linea salida desde la aplicación en Python
 
-// $directorio_python = ".";
-// exec("python hola.py", $salida);
-// echo $salida;    
-// for($i = 0; $i < count($salida); ++$i) {
-//     echo $salida[$i] ."\n";
-// }
 switch ($requestMethod) {
     case 'GET':
         if($uri[1] =='parcelas'){
@@ -552,6 +549,7 @@ switch ($requestMethod) {
             $fechaInicio = isset($data->inicio) ? $data->inicio : "None";
             $fechaFin = isset($data->fin) ? $data->fin : "None";
             $id_parcela = $data->id_parcela;
+            $tipo = $data->tipo;
             // $numeros_vaca = isset($data->numerosVacas) ? implode(',', $data->numerosVacas) : ""; // Convierte array a string separado por comas, maneja el caso donde $data->numerosVacas podría no estar definido
 
             if (isset($data->numerosVacas) && is_array($data->numerosVacas)) {
@@ -566,7 +564,7 @@ switch ($requestMethod) {
             if (isset($IdUsuario)) {
                 // $comando = escapeshellcmd("python python/conjunto_de_datos_rapido.py '$IdUsuario' '$fechaInicio' '$fechaFin' '$numeros_vaca'");
                 // Construye el comando asegurando que no haya saltos de línea ni caracteres adicionales
-                $comando = escapeshellcmd("python python/conjunto_de_datos_rapido.py '$IdUsuario' '$id_parcela' '$fechaInicio' '$fechaFin' '$numeros_vaca'");
+                $comando = escapeshellcmd("python python/conjunto_de_datos_rapido.py '$IdUsuario' '$id_parcela' '$fechaInicio' '$fechaFin' '$tipo' '$numeros_vaca'");
                 $comando = str_replace(PHP_EOL, '', $comando); // Elimina saltos de línea del comando
                 exec($comando, $salida,$codigo_retorno);
                 if ($codigo_retorno == 0) {
@@ -923,7 +921,6 @@ switch ($requestMethod) {
 
         }elseif($uri[1] == 'notificacion'){
             require("notificacion.php");
-
             $title = $_POST["title"];
             $message = $_POST["message"];
 
@@ -933,12 +930,14 @@ switch ($requestMethod) {
             notificacion($title, $message);
         }elseif($uri[1] == 'correo'){
             $destinatario = $_POST["destinatario"];
-            $rutaInformacion = $_POST["rutaInformacion"];
+            $idUsuario = $_POST["idUsuario"];
+            $idParcela = $_POST["idParcela"];
+
             $nombreArchivo = basename($rutaInformacion);
 
-            echo json_encode(["variables" => "$destinatario $rutaInformacion $nombreArchivo"]);
+            echo json_encode(["variables" => "$destinatario $idUsuario $idParcela"]);
 
-            $comando = escapeshellcmd("python3 python/correo.py '$destinatario' '$rutaInformacion' '$nombreArchivo'");
+            $comando = escapeshellcmd("python3 python/correo.py '$destinatario' $idUsuario $idParcela");
             $comando = str_replace(PHP_EOL, '', $comando); // Elimina saltos de línea del comando
             echo($comando);
 

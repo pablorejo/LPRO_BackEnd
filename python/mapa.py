@@ -1,0 +1,169 @@
+import subprocess
+from datetime import datetime, timedelta
+import calendar
+from conf import obtenerNumerosPendiente, obtener_coords_parcela
+import json
+import folium
+from folium.plugins import HeatMap
+import pdfkit
+import os
+
+def conversionMes(intMes):
+    # Diccionario de nombres de meses en español
+    conversionMeses = {
+        1: "Xaneiro",
+        2: "Febreiro",
+        3: "Marzo",
+        4: "Abril",
+        5: "Maio",
+        6: "Xuño",
+        7: "Xullo",
+        8: "Agosto",
+        9: "Setembro",
+        10: "Outubro",
+        11: "Novembro",
+        12: "Decembro"
+    }
+
+    # Convertir el nombre del mes a español
+    stringMes = conversionMeses.get(intMes, intMes)
+    return stringMes
+
+def obtencionFechas():
+    # Obtener la fecha y hora actual
+    fechaActual = datetime.now()
+    añoActual = fechaActual.year
+    mesActual = fechaActual.month
+    # Si el mes actual es enero, ajustar para obtener el año anterior
+    if mesActual == 1:
+        añoDatos = añoActual - 1
+        numMesDatos = 12  # Diciembre del año anterior
+    else:
+        añoDatos = añoActual
+        numMesDatos = mesActual - 1
+
+    mesDatos = conversionMes(numMesDatos)
+
+    # Obtener el último día del mes
+    ultimoDia = calendar.monthrange(añoDatos, numMesDatos)[1]
+    primerDia = 1
+
+    # Crear primera y última fecha del mes:
+    fechaInicio = datetime(añoDatos, numMesDatos, primerDia, 0, 0, 0, 0)
+    fechaFin = datetime(añoDatos, numMesDatos, ultimoDia, 23, 59, 59, 999999)
+
+    return mesDatos, fechaInicio, fechaFin
+
+def mapaCalor(idUsuario, idParcela, tipo):
+    numMesDatos, fechaInicio, fechaFin = obtencionFechas()
+    vacas = obtenerNumerosPendiente(idUsuario)
+    stringVacas = ', '.join(vacas)  # Unir los números con comas y espacio
+
+    if(tipo == None):
+        tipo = "normal"
+    
+
+    latitudes,longitudes = obtener_coords_parcela(idParcela)
+
+    # Convertir las coordenadas a números
+    latitudes = list(map(float, latitudes))
+    longitudes = list(map(float, longitudes))
+
+    # Crear un mapa centrado en las coordenadas de la parcela
+    mapa = folium.Map(location=[sum(latitudes)/len(latitudes), sum(longitudes)/len(longitudes)], zoom_start=50)
+    #mapa = folium.Map(latitudes.mean(), longitudes.mean(), zoom_start=60)
+
+    # Añadir polígono para representar la parcela
+    folium.Polygon(zip(latitudes, longitudes), color='blue', fill=True, fill_color='blue', fill_opacity=0.2).add_to(mapa)
+
+    # Ruta al archivo Python que quieres llamar
+    ruta_al_script = './python/conjunto_de_datos_rapido.py'
+
+    # Argumentos que quieres pasar al script
+    argumentos = [str(idUsuario), str(idParcela), str(fechaInicio), str(fechaFin), tipo, stringVacas]
+    print(argumentos)
+    # Llamar al script de Python
+    resultado = subprocess.run(['python', ruta_al_script] + argumentos, capture_output=True, text=True)
+
+    # Verificar si la llamada fue exitosa
+    if resultado.returncode == 0:
+        # print("Llamada al script exitosa")
+        # print("Resultado:")
+        # print(resultado.stdout)
+
+        # Convertir el diccionario a formato JSON
+        clusters_json = json.loads(resultado.stdout)
+
+        datos_mapa_calor = [[float(cluster['latitude']), float(cluster['longitude'])] for cluster in clusters_json]
+
+        HeatMap(data=datos_mapa_calor, radius=25).add_to(mapa)
+
+        # Guardar el mapa como un archivo HTML
+        if(tipo == "normal"):
+            mapa.save(os.path.join("python/mapas", 'mapa_calor.html'))
+        else:
+             mapa.save(os.path.join("python/mapas", 'mapa_calor_' + tipo + '.html'))
+
+
+    else:
+        print("Error al llamar al script:")
+        print(resultado.stderr)
+
+#mapaCalor(1,2,"normal")
+
+
+# idUsuario=1
+# idParcela=1
+# numMesDatos, fechaInicio, fechaFin = obtencionFechas()
+# vacas = obtenerNumerosPendiente(idUsuario)
+# stringVacas = ', '.join(vacas)  # Unir los números con comas y espacio
+# print(idUsuario)
+# print(idParcela)
+# print(fechaInicio)
+# print(fechaFin)
+# print(stringVacas)
+
+# latitudes,longitudes = obtener_coords_parcela(1)
+
+# # Convertir las coordenadas a números
+# latitudes = list(map(float, latitudes))
+# longitudes = list(map(float, longitudes))
+
+# # Crear un mapa centrado en las coordenadas de la parcela
+# mapa = folium.Map(location=[sum(latitudes)/len(latitudes), sum(longitudes)/len(longitudes)], zoom_start=50)
+
+# # Añadir polígono para representar la parcela
+# folium.Polygon(zip(latitudes, longitudes), color='blue', fill=True, fill_color='blue', fill_opacity=0.2).add_to(mapa)
+
+# # Ruta al archivo Python que quieres llamar
+# ruta_al_script = './conjunto_de_datos_rapido.py'
+
+# # Argumentos que quieres pasar al script
+# argumentos = [str(idUsuario), str(idParcela), str(fechaInicio), str(fechaFin), stringVacas]
+
+# # Llamar al script de Python
+# resultado = subprocess.run(['python', ruta_al_script] + argumentos, capture_output=True, text=True)
+
+# # Verificar si la llamada fue exitosa
+# if resultado.returncode == 0:
+#     # print("Llamada al script exitosa")
+#     # print("Resultado:")
+#     # print(resultado.stdout)
+
+#     # Convertir el diccionario a formato JSON
+#     clusters_json = json.loads(resultado.stdout)
+
+#     # Iterar sobre los datos JSON y agregar marcadores al mapa
+#     for cluster in clusters_json:
+#         latitud = cluster['latitude']
+#         longitud = cluster['longitude']
+#         # Agregar marcador al mapa
+#         folium.Marker(location=[latitud, longitud]).add_to(mapa)
+#         #folium.plugins.HeatMap(location=[latitud, longitud]).add_to(mapa)
+
+#     # Guardar el mapa como un archivo HTML
+#     mapa.save('mapa_clusters.html')
+
+# else:
+#     print("Error al llamar al script:")
+#     print(resultado.stderr)
